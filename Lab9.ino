@@ -3,7 +3,7 @@ void setup() {
   pinMode(A1,INPUT); // switch 2
   pinMode(A2,INPUT); // switch 3
   Serial.begin(9600);
-  pinMode(2,INPUT);  // LED
+  pinMode(2,OUTPUT);  // LED
   pinMode(3,OUTPUT); // motor 1
   pinMode(5,OUTPUT); // motor 2
   pinMode(6,OUTPUT); // relay
@@ -41,21 +41,19 @@ int washStep = 1; // variable to check the steps
 void sevenSegment(int num);
 void motor(int motorNum,int motorSpeed, int motorTime);    
              
-void loop() {
-  sevenSegment(10); // turn off the 7-segment
+void loop() {  
   S1 = analogRead(A0);
   S2 = analogRead(A1);
   S3 = analogRead(A2);
   Serial.print("switch 1 = ");Serial.println(S1);
   Serial.print("switch 2 = ");Serial.println(S2);
   Serial.print("switch 3 = ");Serial.println(S3);
-  delay(5000);
+  Serial.print("step = ");Serial.println(washStep);
   
-  if (S1 > 1000) // Switch 1 is ON
+  if (S1 > 1000) // SwitcDh 1 is ON
   {
     digitalWrite(relay,HIGH); // relay ON
     sevenSegment(0);          // 7-segment displays '0'
-    delay(1000);
     
     /* Step 1: Washing machine takes water about 3 s. */
     if (washStep == 1)
@@ -66,7 +64,7 @@ void loop() {
       {
         sevenSegment(3);
         motor(motor2,255,3000);
-        washStep++;
+        washStep = 2;
       }
     }
     /* Step 2: Washing machine is washing 9 s. 
@@ -78,22 +76,19 @@ void loop() {
       if (S2 > 1000 && S3 == 0)
       {
         motor(motor1,125,9000);
-        washStep++;
+        washStep = 3;
       }
     }
     /* Step 3: Dirty water is pumped out 
-       of the machine about 3 s.
-       Step 6: Rinsing water is pumped out of 
-       the machine about 3 s.*/
-       // two steps are same function
-    if (washStep == 3 || washStep == 6)
+       of the machine about 3 s. */
+      if (washStep == 3)
     { 
       /* switch 3 '1'  whenever all the water is 
          pumped out of the machine. */
       if (S3 > 1000 && S2 == 0)
       {
         motor(motor2,255,3000);
-        washStep++;
+        washStep = 4;
       }
     }
     /* Step 4: Washing machine takes water about 3 s. */
@@ -104,7 +99,7 @@ void loop() {
       if (S3 > 1000 && S2 == 0)
       {
         motor(motor2,255,3000);
-        washStep++;
+        washStep = 5;
       }
     }
     /* Step 5: Washing machine is rinsing 5 s. */
@@ -115,7 +110,19 @@ void loop() {
       if (S2 > 1000 && S3 == 0)
       {
         motor(motor1,255,5000);
-        washStep++;
+        washStep = 6;
+      }
+    }
+    /* Step 6: Rinsing water is pumped out of 
+       the machine about 3 s.*/
+    if (washStep == 6)
+    { 
+      /* switch 3 '1'  whenever all the water is 
+         pumped out of the machine. */
+      if (S3 > 1000 && S2 == 0)
+      {
+        motor(motor2,255,3000);
+        washStep = 7;
       }
     }
     /* Step 7: Washing machine is centrifuging 5 s. 
@@ -127,7 +134,7 @@ void loop() {
       if (S3 > 1000 && S2 == 0)
       {
         motor(motor1,255,5000);
-        washStep++;
+        washStep = 8;
       }
     }
     /* final step blink the led 3 times */
@@ -146,6 +153,7 @@ void loop() {
      reset the washStep. */
   if (S1 == 0)
   {
+    sevenSegment(10); // turn off the 7-segment
     digitalWrite(relay,LOW);
     washStep = 1;
   }
@@ -153,6 +161,8 @@ void loop() {
 
 /* function display number on 7-segment */
 void sevenSegment(int num) {
+  Serial.print("segment = ");
+  Serial.println(num);
   for (int i = 0; i < 7; i++)
   {
     digitalWrite(ledPin[i],bitRead(number[num],i));
